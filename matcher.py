@@ -1,5 +1,3 @@
-from extractor import Extractor
-
 from math import sqrt
 import os
 import pickle
@@ -28,12 +26,12 @@ class Matcher:
         return (sqrt(sum))
 
     def euDist(self, vector):
-        imgSimilarity = [euDistHelper(vector, self.vector[i]) for i in range(len(self.vector))]
+        imgSimilarity = [self.euDistHelper(vector, self.vector[i]) for i in range(len(self.vector))]
         return imgSimilarity
 
     def cosSimHelper(self, vector1, vector2):
-        denom = euDistHelper(vector1, np.zeros(len(vector1))) * \
-                euDistHelper(vector2, np.zeros(len(vector2)))
+        denom = self.euDistHelper(vector1, np.zeros(len(vector1))) * \
+                self.euDistHelper(vector2, np.zeros(len(vector2)))
         try:
             assert denom != 0
         except AssertionError as e:
@@ -46,20 +44,20 @@ class Matcher:
         return (num / denom)
 
     def cosSim(self, vector):
-        imgSimilarity = [(1 - cosSimHelper(vector, self.vector[i])) for i in range(len(self.vector))]
+        imgSimilarity = [(1 - self.cosSimHelper(vector, self.vector[i])) for i in range(len(self.vector))]
         return imgSimilarity
 
     def matcher(self, vector, op, top=3):
         try:
             if (op == "euDist"):
-                imgSimilarity = euDist(vector)
+                imgSimilarity = self.euDist(vector)
             elif (op == "cosSim"):
-                imgSimilarity = cosSim(vector)
+                imgSimilarity = self.cosSim(vector)
             else:
                 raise Exception
         except Exception as e:
+            print(e)
             print("Invalid option")
-            return None
         # Sort imgSimilarity, smaller value: more similar
         idxSort = np.argsort(imgSimilarity)
         nearestImgPath = self.name[idxSort][:3]

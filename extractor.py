@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-from scipy.misc import imread
+from imageio import imread
 import pickle
 import random
 import os
@@ -44,7 +44,7 @@ class Extractor:
         return allImages
 
     def extractImage(self, imgPath, size=32):
-        img = imread(imgPath, mode="RGB")
+        img = imread(imgPath, pilmode="RGB")
         try:
             kps = self.algorithm.detect(img)
             kps = sorted(kps, key=lambda x: -x.response)[:size]
