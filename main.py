@@ -12,14 +12,16 @@ def show_img(path):
     plt.imshow(img)
     plt.show()
 
+
 if __name__ == '__main__':
-    E = Extractor("KAZE", "miniImgData.pck")
+    E = Extractor("miniImgData.pck")
     # E.extractBatch("miniDb")
     M = Matcher()
     a = (E.extractImage(os.path.join("test", "test.jpg")))
-    show_img(os.path.join("test", "test.jpg"))
-    imgPath, imgDist = M.matcher(a, "euDist")
-    print(imgPath[0])
-    print(imgDist[0])
+    # show_img(os.path.join("test", "test.jpg"))
+    imgPath, imgDist = M.matcher(a, "euDist",20)
+    for i in range(20):
+        print(imgPath[i])
+        print(imgDist[i])
     # for i in imgPath:
     #     print (i)

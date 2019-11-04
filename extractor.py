@@ -12,11 +12,9 @@ import scipy
 class Extractor:
     """Class untuk melakukan ekstraksi fitur gambar"""
 
-    def __init__(self, algorithm, pckPath="imgData.pck"):
+    def __init__(self, pckPath="imgData.pck"):
         self.pckPath = os.path.join("pck", pckPath)
-        if (algorithm == "KAZE"):
-            self.algorithm = cv.KAZE_create()
-        # elif SIFT
+        self.algorithm = cv.KAZE_create()
 
     def listImageInDir(self, dirPath, checkImg=False):
         listDir = os.listdir(dirPath)
