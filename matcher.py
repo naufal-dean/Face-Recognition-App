@@ -6,7 +6,7 @@ import numpy as np
 class Matcher:
     """Class untuk melakukan proses matching"""
 
-    def __init__(self, pckPath="imgData.pck"):
+    def __init__(self, pckPath="imgData.pck", fastAlgo=False):
         self.pckPath = os.path.join("pck", pckPath)
         with open(self.pckPath, "rb") as f:
             self.data = pickle.load(f)
@@ -16,27 +16,42 @@ class Matcher:
         self.vectorLen = []
         vectorLenSample = len(next(iter(self.data.values())))
         zeroVector = np.zeros(vectorLenSample)
-        for name, vector in self.data.items():
-            self.name.append(name)
-            self.vector.append(vector)
-            # precompute vector length
-            try:
-                self.vectorLen.append(self.euDistHelper(vector, zeroVector))
-            except Exception as e:
-                self.name.pop()
-                self.vector.pop()
+        if not(fastAlgo):
+            for name, vector in self.data.items():
+                self.name.append(name)
+                self.vector.append(vector)
+                # precompute vector length
+                try:
+                    self.vectorLen.append(self.euDistHelper(vector, zeroVector))
+                except Exception as e:
+                    self.name.pop()
+                    self.vector.pop()
+        else:
+            for name, vector in self.data.items():
+                self.name.append(name)
+                self.vector.append(vector)
+                # precompute vector length
+                try:
+                    self.vectorLen.append(self.euDistHelper(vector, zeroVector, True))
+                except Exception as e:
+                    self.name.pop()
+                    self.vector.pop()
+        # Create numpy array
         self.name = np.array(self.name)
         self.vector = np.array(self.vector)
         self.vectorLen = np.array(self.vectorLen)
 
-    def euDistHelper(self, vector1, vector2):
-        sum = 0
-        for i in range(len(vector1)):
-            sum += (vector1[i] - vector2[i]) ** 2
-        return (sqrt(sum))
+    def euDistHelper(self, vector1, vector2, fastAlgo=False):
+        if not(fastAlgo): # default algo
+            sum = 0
+            for i in range(len(vector1)):
+                sum += (vector1[i] - vector2[i]) ** 2
+            return (sqrt(sum))
+        else: # using numpy, for GUI testing only if needed
+            return (np.linalg.norm(vector1 - vector2))
 
-    def euDist(self, vector):
-        imgSimilarity = [self.euDistHelper(vector, v) for v in self.vector]
+    def euDist(self, vector, fastAlgo=False):
+        imgSimilarity = [self.euDistHelper(vector, v, fastAlgo) for v in self.vector]
         imgSimilarity = np.array(imgSimilarity)
         return imgSimilarity
 
@@ -47,11 +62,11 @@ class Matcher:
             num += vector1[i] * vector2[i]
         return (num)
 
-    def cosSim(self, vector):
+    def cosSim(self, vector, fastAlgo=False):
         imgSimilarity = []
         zeroVector = np.zeros(len(vector))
         for i in range(len(self.vector)):
-            denom = self.euDistHelper(vector, zeroVector) * self.vectorLen[i]
+            denom = self.euDistHelper(vector, zeroVector, fastAlgo) * self.vectorLen[i]
             try:
                 assert denom != 0
                 num = cosSimHelper(vector, self.vector[i])
