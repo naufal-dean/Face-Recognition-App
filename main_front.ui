@@ -75,7 +75,7 @@
      </property>
      <layout class="QFormLayout" name="srcFormLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="sLabel_1">
+       <widget class="QLabel" name="imgPathLbl">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -94,14 +94,14 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="sLabel_2">
+       <widget class="QLabel" name="topImgLbl">
         <property name="text">
          <string>Top Image Out</string>
         </property>
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="sLabel_3">
+       <widget class="QLabel" name="matchAlgLbl">
         <property name="text">
          <string>Matching Algorithm</string>
         </property>
@@ -114,7 +114,7 @@
        <widget class="QComboBox" name="matchAlgInp"/>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="sLabel_4">
+       <widget class="QLabel" name="fastAlgLbl">
         <property name="text">
          <string>Fast Algorithm</string>
         </property>
@@ -168,9 +168,9 @@
     <property name="geometry">
      <rect>
       <x>60</x>
-      <y>60</y>
+      <y>50</y>
       <width>351</width>
-      <height>371</height>
+      <height>381</height>
      </rect>
     </property>
     <property name="title">
@@ -180,7 +180,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>20</y>
+       <y>30</y>
        <width>331</width>
        <height>341</height>
       </rect>
@@ -200,9 +200,9 @@
     <property name="geometry">
      <rect>
       <x>460</x>
-      <y>60</y>
+      <y>50</y>
       <width>351</width>
-      <height>371</height>
+      <height>381</height>
      </rect>
     </property>
     <property name="title">
@@ -212,7 +212,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>20</y>
+       <y>30</y>
        <width>331</width>
        <height>341</height>
       </rect>
@@ -257,21 +257,21 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>20</y>
+       <y>30</y>
        <width>161</width>
        <height>21</height>
       </rect>
      </property>
      <layout class="QFormLayout" name="extFormLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="extLabel">
+       <widget class="QLabel" name="fastAlgExtLbl">
         <property name="text">
          <string>Fast Algorithm             </string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QCheckBox" name="fastAlgExt">
+       <widget class="QCheckBox" name="fastAlgExtBox">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -299,9 +299,9 @@
      <property name="geometry">
       <rect>
        <x>30</x>
-       <y>20</y>
+       <y>30</y>
        <width>61</width>
-       <height>31</height>
+       <height>21</height>
       </rect>
      </property>
      <property name="font">
@@ -318,9 +318,9 @@
      <property name="geometry">
       <rect>
        <x>100</x>
-       <y>20</y>
+       <y>30</y>
        <width>61</width>
-       <height>31</height>
+       <height>21</height>
       </rect>
      </property>
      <property name="font">
