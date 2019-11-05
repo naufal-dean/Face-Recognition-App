@@ -150,7 +150,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="searchBtn">
      <property name="geometry">
       <rect>
        <x>20</x>
