@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 from imageio import imread
 import os
 
-import timeit
-
 def show_img(path):
     img = imread(path, pilmode="RGB")
     plt.imshow(img)
@@ -23,5 +21,3 @@ if __name__ == '__main__':
     for i in range(20):
         print(imgPath[i])
         print(imgDist[i])
-    # for i in imgPath:
-    #     print (i)

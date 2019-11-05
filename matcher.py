@@ -3,8 +3,8 @@ import os
 import pickle
 import numpy as np
 import scipy
-from scipy.misc import imread
-
+import scipy.spatial
+# from PyQt5.QtCore import QObject
 
 class Matcher:
     """Class untuk melakukan proses matching"""
