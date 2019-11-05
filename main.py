@@ -16,11 +16,10 @@ def show_img(path):
 if __name__ == '__main__':
     E = Extractor("miniImgData.pck")
     # E.extractBatch("miniDb")
-    M = Matcher(fastAlgo=True)
-    a = (E.extractImage(os.path.join("test", "test.jpg")))
-    print('ok')
+    M = Matcher(fastAlgoritm=True)
+    a = (E.extractImage(os.path.join("test", "test2.jpg")))
     # show_img(os.path.join("test", "test.jpg"))
-    imgPath, imgDist = M.matcher(a, "euDist", 20)
+    imgPath, imgDist = M.matcher(a, "cosSim", 20, fastAlgoritm=True)
     for i in range(20):
         print(imgPath[i])
         print(imgDist[i])
