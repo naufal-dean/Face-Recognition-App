@@ -150,6 +150,19 @@
       </item>
      </layout>
     </widget>
+    <widget class="QPushButton" name="initBtn">
+     <property name="geometry">
+      <rect>
+       <x>120</x>
+       <y>150</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Init Matcher</string>
+     </property>
+    </widget>
     <widget class="QPushButton" name="searchBtn">
      <property name="geometry">
       <rect>
@@ -238,14 +251,14 @@
      </rect>
     </property>
     <property name="title">
-     <string>Extract Database</string>
+     <string>Database</string>
     </property>
     <widget class="QPushButton" name="extBtn">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>30</x>
        <y>50</y>
-       <width>93</width>
+       <width>131</width>
        <height>28</height>
       </rect>
      </property>
@@ -253,34 +266,18 @@
       <string>Extract</string>
      </property>
     </widget>
-    <widget class="QWidget" name="formLayoutWidget_2">
+    <widget class="QCheckBox" name="imgFilterBox">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>30</x>
        <y>30</y>
-       <width>161</width>
-       <height>21</height>
+       <width>131</width>
+       <height>20</height>
       </rect>
      </property>
-     <layout class="QFormLayout" name="extFormLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="fastAlgExtLbl">
-        <property name="text">
-         <string>Fast Algorithm             </string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="fastAlgExtBox">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="text">
+      <string>Image Only Filter</string>
+     </property>
     </widget>
    </widget>
    <widget class="QGroupBox" name="imOutBtnGroup">

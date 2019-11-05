@@ -9,7 +9,7 @@ import scipy.spatial
 class Matcher:
     """Class untuk melakukan proses matching"""
 
-    def __init__(self, pckPath="imgData.pck", fastAlgoritm=False):
+    def __init__(self, pckPath="imgData.pck", fastAlgorithm=False):
         self.pckPath = os.path.join("pck", pckPath)
         with open(self.pckPath, "rb") as f:
             self.data = pickle.load(f)
@@ -19,7 +19,7 @@ class Matcher:
         self.vectorLen = []
         vectorLenSample = len(next(iter(self.data.values())))
         zeroVector = np.zeros(vectorLenSample)
-        if not(fastAlgoritm):
+        if not(fastAlgorithm):
             for name, vector in self.data.items():
                 self.name.append(name)
                 self.vector.append(vector)
@@ -35,7 +35,7 @@ class Matcher:
                 self.vector.append(vector)
                 # precompute vector length
                 try:
-                    self.vectorLen.append(self.euDistHelper(vector, zeroVector, fastAlgo=True))
+                    self.vectorLen.append(self.euDistHelper(vector, zeroVector, fastAlgorithm=True))
                 except Exception as e:
                     self.name.pop()
                     self.vector.pop()
@@ -44,8 +44,8 @@ class Matcher:
         self.vector = np.array(self.vector)
         self.vectorLen = np.array(self.vectorLen)
 
-    def euDistHelper(self, vector1, vector2, fastAlgo=False):
-        if not(fastAlgo): # default algo
+    def euDistHelper(self, vector1, vector2, fastAlgorithm=False):
+        if not(fastAlgorithm): # default algo
             sum = 0
             for i in range(len(vector1)):
                 sum += (vector1[i] - vector2[i]) ** 2
@@ -53,8 +53,8 @@ class Matcher:
         else: # using numpy, for GUI testing only if needed
             return (np.linalg.norm(vector1 - vector2))
 
-    def euDist(self, vector, fastAlgoritm=False):
-        imgSimilarity = [self.euDistHelper(vector, v, fastAlgo=fastAlgoritm) for v in self.vector]
+    def euDist(self, vector, fastAlgorithm=False):
+        imgSimilarity = [self.euDistHelper(vector, v, fastAlgorithm=fastAlgorithm) for v in self.vector]
         imgSimilarity = np.array(imgSimilarity)
         return imgSimilarity
 
@@ -65,8 +65,8 @@ class Matcher:
             num += vector1[i] * vector2[i]
         return (num)
 
-    def cosSim(self, vector, fastAlgo=False):
-        if not(fastAlgo): # default algo
+    def cosSim(self, vector, fastAlgorithm=False):
+        if not(fastAlgorithm): # default algo
             imgSimilarity = []
             zeroVector = np.zeros(len(vector))
             for i in range(len(self.vector)):
@@ -83,12 +83,12 @@ class Matcher:
         else:  # using scipy, for GUI testing only if needed
             return scipy.spatial.distance.cdist(self.vector, vector.reshape(1, -1), 'cosine').reshape(-1)
 
-    def matcher(self, vector, op, top=3, fastAlgoritm=False):
+    def match(self, vector, op, top=3, fastAlgorithm=False):
         try:
             if (op == "euDist"):
-                imgSimilarity = self.euDist(vector, fastAlgo=fastAlgoritm)
+                imgSimilarity = self.euDist(vector, fastAlgorithm=fastAlgorithm)
             elif (op == "cosSim"):
-                imgSimilarity = self.cosSim(vector, fastAlgo=fastAlgoritm)
+                imgSimilarity = self.cosSim(vector, fastAlgorithm=fastAlgorithm)
             else:
                 raise Exception
         except Exception as e:
