@@ -1,3 +1,5 @@
+from worker import Worker
+
 import cv2 as cv
 import numpy as np
 from imageio import imread
@@ -6,10 +8,24 @@ import random
 import os
 from PIL import Image
 
-class Extractor:
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+
+class Extractor(QObject):
     """Class untuk melakukan ekstraksi fitur gambar"""
+    # Pyqt Signals
+    sgnExtProgress = pyqtSignal(int)
+    sgnExtTotalImg = pyqtSignal(int)
+    sgnExtException = pyqtSignal(object)
+    sgnExtDone = pyqtSignal()
 
     def __init__(self, pckPath="imgData.pck"):
+        # QObject init
+        super(Extractor, self).__init__()
+        # Multithreader
+        self.threadPool = QThreadPool()
+        # Class property
         self.pckPath = os.path.join("pck", pckPath)
         self.algorithm = cv.KAZE_create()
 
@@ -52,15 +68,37 @@ class Extractor:
             return None
         return dsc
 
-    def extractBatch(self, batchPath, checkImg=False):
+    def extractBatch(self, batchPath, checkImg):
         images = self.listImageInDir(batchPath, checkImg)
 
+        # Init QProgressDialog
+        self.sgnExtTotalImg.emit(len(images))
+        counter = 0
         pckContent = {}
         for image in images:
-            print("Image {}".format(image))
             name = image.split('/')[-1].lower()
             imgContent = self.extractImage(image)
             pckContent[name] = self.extractImage(image)
+            # Update progress
+            counter += 1
+            self.sgnExtProgress.emit(counter)
+            print("Image {}".format(image))
 
         with open(self.pckPath, "wb") as f:
             pickle.dump(pckContent, f)
+
+    # Multithreader
+    def extractBatchThreader(self, batchPath, checkImg=False):
+        # Create worker instance
+        worker = Worker(self.extractBatch, batchPath, checkImg)
+        # Connect signals
+        worker.signals.exception.connect(self.extractBatchThreadException)
+        worker.signals.done.connect(self.extractBatchThreadDone)
+        # Run thread
+        self.threadPool.start(worker)
+
+    def extractBatchThreadException(self, exception):
+        self.sgnExtException.emit(exception)
+
+    def extractBatchThreadDone(self):
+        self.sgnExtDone.emit()

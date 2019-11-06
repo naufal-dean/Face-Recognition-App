@@ -3,7 +3,9 @@ from matcher import Matcher
 
 import os
 from PIL import Image
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
@@ -13,11 +15,16 @@ class MainWindowUI(object):
 
     def __init__(self):
         self.extractor = Extractor()
+        self.extractor.sgnExtTotalImg.connect(self.extProgBar)
+        self.extractor.sgnExtProgress.connect(self.setExtProgBarVal)
+        self.extractor.sgnExtException.connect(self.extractDatabaseException)
+        self.extractor.sgnExtDone.connect(self.extractDatabaseDone)
 
+    # Setup UI
     def setupUi(self, MainWindow):
         # Main
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(869, 660)
+        MainWindow.setFixedSize(869, 660)
         MainWindow.setWindowIcon(QIcon("icon\\itb_icon.png"))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -205,6 +212,8 @@ class MainWindowUI(object):
         self.exitBtn.setText(_translate("MainWindow", "Exit"))
         self.aboutBtn.setText(_translate("MainWindow", "About"))
 
+    # Slot functions
+    # Image Input
     def selectImageInput(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select Image", "", "Image Files (*.png *.jpg *.jpeg)")
         if fileName:
@@ -227,44 +236,12 @@ class MainWindowUI(object):
         self.picInLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.imgPathInp.setText(fileName)
 
+    # Image Output
     def setImageOutput(self, fileName):
         pixmap = QPixmap(fileName)
         pixmap = pixmap.scaled(self.picOutLabel.width(), self.picOutLabel.height(), QtCore.Qt.KeepAspectRatio)
         self.picOutLabel.setPixmap(pixmap)
         self.picOutLabel.setAlignment(QtCore.Qt.AlignCenter)
-
-    def initializeMatcher(self):
-        self.setStatusText("Precomputing vector norm from package...")
-        if self.fastAlgInp.isChecked():
-            self.matcher = Matcher(fastAlgorithm=True)
-        else:
-            self.matcher = Matcher()
-        self.searchBtn.setEnabled(True)
-        self.setStatusText("Initialization completed")
-
-    def searchImage(self):
-        self.setStatusText("Matching image...")
-        try:    # test file existence
-            if os.path.isfile(self.imgPathInp.text()):  # image test
-                img = Image.open(self.imgPathInp.text())
-                self.imgVector = self.extractor.extractImage(self.imgPathInp.text())
-                # Setup search
-                matchAlgorithm = ("euDist") if (self.matchAlgInp.currentIndex() == 0) else ("cosSim")
-                self.simImgPath, self.simImgDist = self.matcher.match(self.imgVector,
-                                    matchAlgorithm, self.topImgInp.value(), self.fastAlgInp.isChecked())
-                # Show Image Out and Create Image Index Property
-                self.topImgMax = self.topImgInp.value() - 1
-                self.topImgNow = 0
-                self.setImageOutput(self.simImgPath[0])
-                if self.topImgNow != self.topImgMax:
-                    self.nextImgBtn.setEnabled(True)
-                self.setStatusText(self.simImgPath[0] + "\tDistance: " + str(self.simImgDist[0]))
-            else:
-                self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File not found!", type="Warning")
-                self.setStatusText("Matching failed")
-        except IOError:
-            self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File is not an image!", type="Warning")
-            self.setStatusText("Matching failed")
 
     def prevImage(self):
         self.nextImgBtn.setEnabled(True)
@@ -282,11 +259,92 @@ class MainWindowUI(object):
         self.setImageOutput(self.simImgPath[self.topImgNow])
         self.setStatusText(self.simImgPath[self.topImgNow] + "\tDistance: " + str(self.simImgDist[self.topImgNow]))
 
+    # Search Image
+    def initializeMatcher(self):
+        self.setStatusText("Precomputing vector norm from package...")
+        # Create instance
+        if self.fastAlgInp.isChecked():
+            self.matcher = Matcher(fastAlgorithm=True)
+        else:
+            self.matcher = Matcher()
+        # Connect signals
+        self.matcher.sgnSrcTotalImg.connect(self.srcProgBar)
+        self.matcher.sgnSrcProgress.connect(self.setSrcProgBarVal)
+        self.matcher.sgnSrcException.connect(self.searchImageException)
+        self.matcher.sgnSrcResult.connect(self.searchImageResult)
+        self.matcher.sgnSrcDone.connect(self.searchImageDone)
+        # Activate search button
+        self.searchBtn.setEnabled(True)
+        self.setStatusText("Initialization completed")
+
+    def searchImage(self):
+        self.setStatusText("Matching image...")
+        # Deactivate search button
+        self.searchBtn.setEnabled(False)
+        try:    # test file existence
+            if os.path.isfile(self.imgPathInp.text()):  # image test
+                img = Image.open(self.imgPathInp.text())
+                self.imgVector = self.extractor.extractImage(self.imgPathInp.text())
+                # Setup search
+                matchAlgorithm = ("euDist") if (self.matchAlgInp.currentIndex() == 0) else ("cosSim")
+                self.matcher.matchThreader(self.imgVector, matchAlgorithm, self.topImgInp.value(), self.fastAlgInp.isChecked())
+            else:
+                self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File not found!", type="Warning")
+                self.setStatusText("Matching failed")
+        except IOError:
+            self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File is not an image!", type="Warning")
+            self.setStatusText("Matching failed")
+
+    def srcProgBar(self, totalImage):
+        self.pbSrc = QProgressDialog("Matching image...", "Cancel", 0, totalImage, self.centralwidget)
+        self.pbSrc.setWindowTitle("Progress..")
+        self.pbSrc.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        self.pbSrc.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+
+    def setSrcProgBarVal(self, progress):
+        self.pbSrc.setValue(progress)
+
+    def searchImageException(self, exception):
+        print("Error: " + str(exception))
+
+    def searchImageResult(self, res):
+        self.simImgPath, self.simImgDist = res
+
+    def searchImageDone(self):
+        self.setStatusText("Matching completed")
+        # Show Image Out and Create Image Index Property
+        self.topImgMax = self.topImgInp.value() - 1
+        self.topImgNow = 0
+        self.setImageOutput(self.simImgPath[0])
+        if self.topImgNow != self.topImgMax:
+            self.nextImgBtn.setEnabled(True)
+        self.setStatusText(self.simImgPath[0] + "\tDistance: " + str(self.simImgDist[0]))
+        # Activate search button
+        self.searchBtn.setEnabled(True)
+
+    # Extract Database
     def extractDatabase(self):
         self.setStatusText("Extracting vector from database...")
-        self.extractor.extractBatch("db", checkImg=self.imgFilterBox.isChecked())
-        self.setStatusText("Extraction completed")
+        self.extBtn.setEnabled(False)
+        self.extractor.extractBatchThreader("db", self.imgFilterBox.isChecked())
 
+    def extProgBar(self, totalImage):
+        self.pbExt = QProgressDialog("Extracting images...", "Cancel", 0, totalImage, self.centralwidget)
+        self.pbExt.setWindowTitle("Progress..")
+        self.pbExt.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        self.pbExt.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+
+    def setExtProgBarVal(self, progress):
+        self.pbExt.setValue(progress)
+
+    def extractDatabaseException(self, exception):
+        print("Error: " + str(exception))
+
+    def extractDatabaseDone(self):
+        self.setStatusText("Done")
+        self.extBtn.setEnabled(True)
+
+    # Misc
     def setStatusText(self, text):
         self.statusBar.showMessage(text)
 
