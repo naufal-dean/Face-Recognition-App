@@ -41,7 +41,7 @@ class Matcher(QObject):
                 self.vector.append(vector)
                 # precompute vector length
                 try:
-                    self.vectorLen.append(self.euDistHelper(vector, zeroVector))
+                    self.vectorLen.append(self.vectorDistance(vector, zeroVector))
                 except Exception as e:
                     self.name.pop()
                     self.vector.pop()
@@ -51,7 +51,7 @@ class Matcher(QObject):
                 self.vector.append(vector)
                 # precompute vector length
                 try:
-                    self.vectorLen.append(self.euDistHelper(vector, zeroVector, fastAlgorithm=True))
+                    self.vectorLen.append(self.vectorDistance(vector, zeroVector, fastAlgorithm=True))
                 except Exception as e:
                     self.name.pop()
                     self.vector.pop()
@@ -60,13 +60,15 @@ class Matcher(QObject):
         self.vector = np.array(self.vector)
         self.vectorLen = np.array(self.vectorLen)
 
-    def euDistHelper(self, vector1, vector2, fastAlgorithm=False):
+    def vectorDistance(self, vector1, vector2, fastAlgorithm=False):
         if not(fastAlgorithm): # default algo
             sum = 0
-            for i in range(len(vector1)):
-                sum += (vector1[i] - vector2[i]) * (vector1[i] - vector2[i])
+            # calculate vector1[i] - vector2[i], i element index, and store it in vectorDiff
+            vectorDiff = np.array(vector1) - np.array(vector2)
+            for el in vectorDiff:
+                sum += el * el
             return (sqrt(sum))
-        else: # using numpy, for GUI testing only if needed
+        else: # using numpy norm function, for GUI testing only if needed
             return (np.linalg.norm(vector1 - vector2))
 
     def euDist(self, vector, fastAlgorithm=False):
@@ -75,18 +77,19 @@ class Matcher(QObject):
         counter = 0
         imgSimilarity = []
         for v in self.vector:
-            imgSimilarity.append(self.euDistHelper(vector, v, fastAlgorithm=fastAlgorithm))
+            imgSimilarity.append(self.vectorDistance(vector, v, fastAlgorithm=fastAlgorithm))
             # Update progress
             counter += 1
             self.sgnSrcProgress.emit(counter)
         imgSimilarity = np.array(imgSimilarity)
         return imgSimilarity
 
-    def cosSimHelper(self, vector1, vector2):
-        # Calculate numerator
+    def vectorDot(self, vector1, vector2):
         num = 0
-        for i in range(len(vector1)):
-            num += vector1[i] * vector2[i]
+        # calculate vector1[i] * vector2[i], i element index, and store it in vectorMult
+        vectorMult = np.array(vector1) * np.array(vector2)
+        for el in vectorMult:
+            num += el
         return (num)
 
     def cosSim(self, vector, fastAlgorithm=False):
@@ -97,10 +100,10 @@ class Matcher(QObject):
             imgSimilarity = []
             zeroVector = np.zeros(len(vector))
             for i in range(len(self.vector)):
-                denom = self.euDistHelper(vector, zeroVector) * self.vectorLen[i]
+                denom = self.vectorDistance(vector, zeroVector) * self.vectorLen[i]
                 try:
                     assert denom != 0
-                    num = self.cosSimHelper(vector, self.vector[i])
+                    num = self.vectorDot(vector, self.vector[i])
                     imgSimilarity.append(1 - num/denom)
                 except AssertionError as e:
                     imgSimilarity.append(1)        # sehingga gambar yang error tidak akan dipilih jadi top imgSimilarity
