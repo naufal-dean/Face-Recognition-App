@@ -48,7 +48,7 @@ class Matcher:
         if not(fastAlgorithm): # default algo
             sum = 0
             for i in range(len(vector1)):
-                sum += (vector1[i] - vector2[i]) ** 2
+                sum += (vector1[i] - vector2[i]) * (vector1[i] - vector2[i])
             return (sqrt(sum))
         else: # using numpy, for GUI testing only if needed
             return (np.linalg.norm(vector1 - vector2))

@@ -17,7 +17,7 @@ class MainWindowUI(object):
     def setupUi(self, MainWindow):
         # Main
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(869, 638)
+        MainWindow.resize(869, 660)
         MainWindow.setWindowIcon(QIcon("icon\\itb_icon.png"))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -155,6 +155,11 @@ class MainWindowUI(object):
         self.exitBtn = QtWidgets.QPushButton(self.centralwidget)
         self.exitBtn.setGeometry(QtCore.QRect(720, 600, 93, 28))
         self.exitBtn.setObjectName("exitBtn")
+        # Status bar
+        self.statusBar = QtWidgets.QStatusBar(MainWindow)
+        self.statusBar.setObjectName("statusBar")
+        self.statusBar.showMessage("Ready")
+        MainWindow.setStatusBar(self.statusBar)
         # Finishing setup
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -179,7 +184,7 @@ class MainWindowUI(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Face Recognition App IF2123 ITB 2019"))
         self.titleLabel.setText(_translate("MainWindow", "Face Recognition App"))
         self.searchGroup.setTitle(_translate("MainWindow", "Search Settings"))
         self.imgPathLbl.setText(_translate("MainWindow", "Image In Path"))
@@ -229,13 +234,16 @@ class MainWindowUI(object):
         self.picOutLabel.setAlignment(QtCore.Qt.AlignCenter)
 
     def initializeMatcher(self):
+        self.setStatusText("Precomputing vector norm from package...")
         if self.fastAlgInp.isChecked():
             self.matcher = Matcher(fastAlgorithm=True)
         else:
             self.matcher = Matcher()
         self.searchBtn.setEnabled(True)
+        self.setStatusText("Initialization completed")
 
     def searchImage(self):
+        self.setStatusText("Matching image...")
         try:    # test file existence
             if os.path.isfile(self.imgPathInp.text()):  # image test
                 img = Image.open(self.imgPathInp.text())
@@ -250,10 +258,13 @@ class MainWindowUI(object):
                 self.setImageOutput(self.simImgPath[0])
                 if self.topImgNow != self.topImgMax:
                     self.nextImgBtn.setEnabled(True)
+                self.setStatusText(self.simImgPath[0] + "\tDistance: " + str(self.simImgDist[0]))
             else:
                 self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File not found!", type="Warning")
+                self.setStatusText("Matching failed")
         except IOError:
             self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File is not an image!", type="Warning")
+            self.setStatusText("Matching failed")
 
     def prevImage(self):
         self.nextImgBtn.setEnabled(True)
@@ -261,6 +272,7 @@ class MainWindowUI(object):
         if self.topImgNow == 0:
             self.prevImgBtn.setEnabled(False)
         self.setImageOutput(self.simImgPath[self.topImgNow])
+        self.setStatusText(self.simImgPath[self.topImgNow] + "\tDistance: " + str(self.simImgDist[self.topImgNow]))
 
     def nextImage(self):
         self.prevImgBtn.setEnabled(True)
@@ -268,10 +280,15 @@ class MainWindowUI(object):
         if self.topImgNow == self.topImgMax:
             self.nextImgBtn.setEnabled(False)
         self.setImageOutput(self.simImgPath[self.topImgNow])
+        self.setStatusText(self.simImgPath[self.topImgNow] + "\tDistance: " + str(self.simImgDist[self.topImgNow]))
 
     def extractDatabase(self):
-        print(self.imgFilterBox.isChecked())
+        self.setStatusText("Extracting vector from database...")
         self.extractor.extractBatch("db", checkImg=self.imgFilterBox.isChecked())
+        self.setStatusText("Extraction completed")
+
+    def setStatusText(self, text):
+        self.statusBar.showMessage(text)
 
     def dialogWindow(self, title, text, subtext="" , type="Information"):
         message = QMessageBox()

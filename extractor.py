@@ -5,9 +5,6 @@ import pickle
 import random
 import os
 from PIL import Image
-# useless
-import matplotlib.pyplot as plt
-import scipy
 
 class Extractor:
     """Class untuk melakukan ekstraksi fitur gambar"""
