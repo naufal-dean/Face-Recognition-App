@@ -1,15 +1,31 @@
+from worker import Worker
+
 from math import sqrt
 import os
 import pickle
 import numpy as np
 import scipy
 import scipy.spatial
-# from PyQt5.QtCore import QObject
 
-class Matcher:
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+
+class Matcher(QObject):
     """Class untuk melakukan proses matching"""
+    # Pyqt Signals
+    sgnSrcProgress = pyqtSignal(int)
+    sgnSrcTotalImg = pyqtSignal(int)
+    sgnSrcException = pyqtSignal(object)
+    sgnSrcResult = pyqtSignal(object)
+    sgnSrcDone = pyqtSignal()
 
     def __init__(self, pckPath="imgData.pck", fastAlgorithm=False):
+        # QObject init
+        super(Matcher, self).__init__()
+        # Multithreader
+        self.threadPool = QThreadPool()
+        # Class property
         self.pckPath = os.path.join("pck", pckPath)
         with open(self.pckPath, "rb") as f:
             self.data = pickle.load(f)
@@ -25,7 +41,7 @@ class Matcher:
                 self.vector.append(vector)
                 # precompute vector length
                 try:
-                    self.vectorLen.append(self.euDistHelper(vector, zeroVector))
+                    self.vectorLen.append(self.vectorDistance(vector, zeroVector))
                 except Exception as e:
                     self.name.pop()
                     self.vector.pop()
@@ -35,7 +51,7 @@ class Matcher:
                 self.vector.append(vector)
                 # precompute vector length
                 try:
-                    self.vectorLen.append(self.euDistHelper(vector, zeroVector, fastAlgorithm=True))
+                    self.vectorLen.append(self.vectorDistance(vector, zeroVector, fastAlgorithm=True))
                 except Exception as e:
                     self.name.pop()
                     self.vector.pop()
@@ -44,46 +60,64 @@ class Matcher:
         self.vector = np.array(self.vector)
         self.vectorLen = np.array(self.vectorLen)
 
-    def euDistHelper(self, vector1, vector2, fastAlgorithm=False):
+    def vectorDistance(self, vector1, vector2, fastAlgorithm=False):
         if not(fastAlgorithm): # default algo
             sum = 0
-            for i in range(len(vector1)):
-                sum += (vector1[i] - vector2[i]) ** 2
+            # calculate vector1[i] - vector2[i], i element index, and store it in vectorDiff
+            vectorDiff = np.array(vector1) - np.array(vector2)
+            for el in vectorDiff:
+                sum += el * el
             return (sqrt(sum))
-        else: # using numpy, for GUI testing only if needed
+        else: # using numpy norm function, for GUI testing only if needed
             return (np.linalg.norm(vector1 - vector2))
 
     def euDist(self, vector, fastAlgorithm=False):
-        imgSimilarity = [self.euDistHelper(vector, v, fastAlgorithm=fastAlgorithm) for v in self.vector]
+        # Init QProgressDialog
+        self.sgnSrcTotalImg.emit(len(self.vector))
+        counter = 0
+        imgSimilarity = []
+        for v in self.vector:
+            imgSimilarity.append(self.vectorDistance(vector, v, fastAlgorithm=fastAlgorithm))
+            # Update progress
+            counter += 1
+            self.sgnSrcProgress.emit(counter)
         imgSimilarity = np.array(imgSimilarity)
         return imgSimilarity
 
-    def cosSimHelper(self, vector1, vector2):
-        # Calculate numerator
+    def vectorDot(self, vector1, vector2):
         num = 0
-        for i in range(len(vector1)):
-            num += vector1[i] * vector2[i]
+        # calculate vector1[i] * vector2[i], i element index, and store it in vectorMult
+        vectorMult = np.array(vector1) * np.array(vector2)
+        for el in vectorMult:
+            num += el
         return (num)
 
     def cosSim(self, vector, fastAlgorithm=False):
         if not(fastAlgorithm): # default algo
+            # Init QProgressDialog
+            self.sgnSrcTotalImg.emit(len(self.vector))
+            counter = 0
             imgSimilarity = []
             zeroVector = np.zeros(len(vector))
             for i in range(len(self.vector)):
-                denom = self.euDistHelper(vector, zeroVector) * self.vectorLen[i]
+                denom = self.vectorDistance(vector, zeroVector) * self.vectorLen[i]
                 try:
                     assert denom != 0
-                    num = self.cosSimHelper(vector, self.vector[i])
+                    num = self.vectorDot(vector, self.vector[i])
                     imgSimilarity.append(1 - num/denom)
                 except AssertionError as e:
                     imgSimilarity.append(1)        # sehingga gambar yang error tidak akan dipilih jadi top imgSimilarity
                                                    # imgSimilarity, smaller value: more similar, maxVal in cosSim is 1
+                # Update progress
+                counter += 1
+                self.sgnSrcProgress.emit(counter)
+
             imgSimilarity = np.array(imgSimilarity)
             return imgSimilarity
         else:  # using scipy, for GUI testing only if needed
             return scipy.spatial.distance.cdist(self.vector, vector.reshape(1, -1), 'cosine').reshape(-1)
 
-    def match(self, vector, op, top=3, fastAlgorithm=False):
+    def match(self, vector, op, top, fastAlgorithm):
         try:
             if (op == "euDist"):
                 imgSimilarity = self.euDist(vector, fastAlgorithm=fastAlgorithm)
@@ -99,3 +133,23 @@ class Matcher:
         nearestImgPath = self.name[idxSort][:top]
         nearestImgDist = imgSimilarity[idxSort][:top]
         return (nearestImgPath.tolist(), nearestImgDist.tolist())
+
+    # Multithreader
+    def matchThreader(self, vector, op, top=3, fastAlgorithm=False):
+        # Create worker instance
+        worker = Worker(self.match, vector, op, top, fastAlgorithm)
+        # Connect signals
+        worker.signals.exception.connect(self.matchThreadException)
+        worker.signals.result.connect(self.matchThreadResult)
+        worker.signals.done.connect(self.matchThreadDone)
+        # Run thread
+        self.threadPool.start(worker)
+
+    def matchThreadException(self, exception):
+        self.sgnSrcException.emit(exception)
+
+    def matchThreadResult(self, res):
+        self.sgnSrcResult.emit(res)
+
+    def matchThreadDone(self):
+        self.sgnSrcDone.emit()

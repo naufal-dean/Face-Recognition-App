@@ -12,8 +12,13 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+<<<<<<< HEAD
         MainWindow.setObjectName("FaceRecognition")
         MainWindow.resize(869, 638)
+=======
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(869, 641)
+>>>>>>> 3defaa92ca504727a717c5fad66875ccd3e40569
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.backgroundLabel = QtWidgets.QLabel(self.centralwidget)
@@ -29,10 +34,10 @@ class Ui_MainWindow(object):
         self.titleLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.titleLabel.setObjectName("titleLabel")
         self.searchGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.searchGroup.setGeometry(QtCore.QRect(30, 440, 571, 191))
+        self.searchGroup.setGeometry(QtCore.QRect(30, 440, 591, 191))
         self.searchGroup.setObjectName("searchGroup")
         self.formLayoutWidget = QtWidgets.QWidget(self.searchGroup)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(20, 30, 531, 115))
+        self.formLayoutWidget.setGeometry(QtCore.QRect(20, 30, 551, 115))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.srcFormLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
         self.srcFormLayout.setContentsMargins(0, 0, 0, 0)
@@ -99,7 +104,7 @@ class Ui_MainWindow(object):
         self.picOutLabel.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.picOutLabel.setObjectName("picOutLabel")
         self.extGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.extGroup.setGeometry(QtCore.QRect(620, 500, 191, 91))
+        self.extGroup.setGeometry(QtCore.QRect(650, 500, 191, 91))
         self.extGroup.setObjectName("extGroup")
         self.extBtn = QtWidgets.QPushButton(self.extGroup)
         self.extBtn.setGeometry(QtCore.QRect(30, 50, 131, 28))
@@ -108,7 +113,7 @@ class Ui_MainWindow(object):
         self.imgFilterBox.setGeometry(QtCore.QRect(30, 30, 131, 20))
         self.imgFilterBox.setObjectName("imgFilterBox")
         self.imOutBtnGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.imOutBtnGroup.setGeometry(QtCore.QRect(620, 439, 191, 61))
+        self.imOutBtnGroup.setGeometry(QtCore.QRect(650, 439, 191, 61))
         self.imOutBtnGroup.setObjectName("imOutBtnGroup")
         self.prevImgBtn = QtWidgets.QPushButton(self.imOutBtnGroup)
         self.prevImgBtn.setGeometry(QtCore.QRect(30, 30, 61, 21))
@@ -125,10 +130,10 @@ class Ui_MainWindow(object):
         self.nextImgBtn.setFont(font)
         self.nextImgBtn.setObjectName("nextImgBtn")
         self.exitBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.exitBtn.setGeometry(QtCore.QRect(720, 600, 93, 28))
+        self.exitBtn.setGeometry(QtCore.QRect(750, 600, 93, 28))
         self.exitBtn.setObjectName("exitBtn")
         self.aboutBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.aboutBtn.setGeometry(QtCore.QRect(620, 600, 93, 28))
+        self.aboutBtn.setGeometry(QtCore.QRect(650, 600, 93, 28))
         self.aboutBtn.setObjectName("aboutBtn")
         MainWindow.setCentralWidget(self.centralwidget)
 

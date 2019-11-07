@@ -3,7 +3,9 @@ from matcher import Matcher
 
 import os
 from PIL import Image
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
@@ -13,11 +15,17 @@ class MainWindowUI(object):
 
     def __init__(self):
         self.extractor = Extractor()
+        self.extractor.sgnExtTotalImg.connect(self.extProgBar)
+        self.extractor.sgnExtProgress.connect(self.setExtProgBarVal)
+        self.extractor.sgnExtException.connect(self.extractDatabaseException)
+        self.extractor.sgnExtStatus.connect(self.extractDatabaseStatus)
+        self.extractor.sgnExtDone.connect(self.extractDatabaseDone)
 
+    # Setup UI
     def setupUi(self, MainWindow):
         # Main
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(869, 638)
+        MainWindow.setFixedSize(869, 660)
         MainWindow.setWindowIcon(QIcon("icon\\itb_icon.png"))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -41,10 +49,10 @@ class MainWindowUI(object):
         self.titleLabel.setObjectName("titleLabel")
         # Search Group
         self.searchGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.searchGroup.setGeometry(QtCore.QRect(30, 440, 571, 191))
+        self.searchGroup.setGeometry(QtCore.QRect(30, 440, 591, 191))
         self.searchGroup.setObjectName("searchGroup")
         self.formLayoutWidget = QtWidgets.QWidget(self.searchGroup)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(20, 30, 531, 115))
+        self.formLayoutWidget.setGeometry(QtCore.QRect(20, 30, 551, 115))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.srcFormLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
         self.srcFormLayout.setContentsMargins(0, 0, 0, 0)
@@ -120,7 +128,7 @@ class MainWindowUI(object):
         self.picOutLabel.setObjectName("picOutLabel")
         # Extract Database Group
         self.extGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.extGroup.setGeometry(QtCore.QRect(620, 500, 191, 91))
+        self.extGroup.setGeometry(QtCore.QRect(650, 500, 191, 91))
         self.extGroup.setObjectName("extGroup")
         self.extBtn = QtWidgets.QPushButton(self.extGroup)
         self.extBtn.setGeometry(QtCore.QRect(30, 50, 131, 28))
@@ -130,7 +138,7 @@ class MainWindowUI(object):
         self.imgFilterBox.setObjectName("imgFilterBox")
         # Image out button
         self.imOutBtnGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.imOutBtnGroup.setGeometry(QtCore.QRect(620, 439, 191, 61))
+        self.imOutBtnGroup.setGeometry(QtCore.QRect(650, 439, 191, 61))
         self.imOutBtnGroup.setObjectName("imOutBtnGroup")
         self.prevImgBtn = QtWidgets.QPushButton(self.imOutBtnGroup)
         self.prevImgBtn.setEnabled(False)
@@ -150,11 +158,18 @@ class MainWindowUI(object):
         self.nextImgBtn.setObjectName("nextImgBtn")
         # About and Exit button
         self.aboutBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.aboutBtn.setGeometry(QtCore.QRect(620, 600, 93, 28))
+        self.aboutBtn.setGeometry(QtCore.QRect(650, 600, 93, 28))
         self.aboutBtn.setObjectName("aboutBtn")
         self.exitBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.exitBtn.setGeometry(QtCore.QRect(720, 600, 93, 28))
+        self.exitBtn.setGeometry(QtCore.QRect(750, 600, 93, 28))
         self.exitBtn.setObjectName("exitBtn")
+        # Status bar
+        self.statusBar = QtWidgets.QStatusBar(MainWindow)
+        self.rightStatus = QLabel("Thread: N/A")
+        self.statusBar.addPermanentWidget(self.rightStatus)
+        self.statusBar.setObjectName("statusBar")
+        self.statusBar.showMessage("Ready")
+        MainWindow.setStatusBar(self.statusBar)
         # Finishing setup
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -179,7 +194,7 @@ class MainWindowUI(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Face Recognition App IF2123 ITB 2019"))
         self.titleLabel.setText(_translate("MainWindow", "Face Recognition App"))
         self.searchGroup.setTitle(_translate("MainWindow", "Search Settings"))
         self.imgPathLbl.setText(_translate("MainWindow", "Image In Path"))
@@ -200,6 +215,8 @@ class MainWindowUI(object):
         self.exitBtn.setText(_translate("MainWindow", "Exit"))
         self.aboutBtn.setText(_translate("MainWindow", "About"))
 
+    # Slot functions
+    # Image Input
     def selectImageInput(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select Image", "", "Image Files (*.png *.jpg *.jpeg)")
         if fileName:
@@ -222,38 +239,12 @@ class MainWindowUI(object):
         self.picInLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.imgPathInp.setText(fileName)
 
+    # Image Output
     def setImageOutput(self, fileName):
         pixmap = QPixmap(fileName)
         pixmap = pixmap.scaled(self.picOutLabel.width(), self.picOutLabel.height(), QtCore.Qt.KeepAspectRatio)
         self.picOutLabel.setPixmap(pixmap)
         self.picOutLabel.setAlignment(QtCore.Qt.AlignCenter)
-
-    def initializeMatcher(self):
-        if self.fastAlgInp.isChecked():
-            self.matcher = Matcher(fastAlgorithm=True)
-        else:
-            self.matcher = Matcher()
-        self.searchBtn.setEnabled(True)
-
-    def searchImage(self):
-        try:    # test file existence
-            if os.path.isfile(self.imgPathInp.text()):  # image test
-                img = Image.open(self.imgPathInp.text())
-                self.imgVector = self.extractor.extractImage(self.imgPathInp.text())
-                # Setup search
-                matchAlgorithm = ("euDist") if (self.matchAlgInp.currentIndex() == 0) else ("cosSim")
-                self.simImgPath, self.simImgDist = self.matcher.match(self.imgVector,
-                                    matchAlgorithm, self.topImgInp.value(), self.fastAlgInp.isChecked())
-                # Show Image Out and Create Image Index Property
-                self.topImgMax = self.topImgInp.value() - 1
-                self.topImgNow = 0
-                self.setImageOutput(self.simImgPath[0])
-                if self.topImgNow != self.topImgMax:
-                    self.nextImgBtn.setEnabled(True)
-            else:
-                self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File not found!", type="Warning")
-        except IOError:
-            self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File is not an image!", type="Warning")
 
     def prevImage(self):
         self.nextImgBtn.setEnabled(True)
@@ -261,6 +252,7 @@ class MainWindowUI(object):
         if self.topImgNow == 0:
             self.prevImgBtn.setEnabled(False)
         self.setImageOutput(self.simImgPath[self.topImgNow])
+        self.setStatusText(self.simImgPath[self.topImgNow] + "\tDistance: " + str(self.simImgDist[self.topImgNow]))
 
     def nextImage(self):
         self.prevImgBtn.setEnabled(True)
@@ -268,10 +260,107 @@ class MainWindowUI(object):
         if self.topImgNow == self.topImgMax:
             self.nextImgBtn.setEnabled(False)
         self.setImageOutput(self.simImgPath[self.topImgNow])
+        self.setStatusText(self.simImgPath[self.topImgNow] + "\tDistance: " + str(self.simImgDist[self.topImgNow]))
 
+    # Search Image
+    def initializeMatcher(self):
+        self.setStatusText("Precomputing vector norm from package...")
+        # Create instance
+        if self.fastAlgInp.isChecked():
+            self.matcher = Matcher(fastAlgorithm=True)
+        else:
+            self.matcher = Matcher()
+        # Connect signals
+        self.matcher.sgnSrcTotalImg.connect(self.srcProgBar)
+        self.matcher.sgnSrcProgress.connect(self.setSrcProgBarVal)
+        self.matcher.sgnSrcException.connect(self.searchImageException)
+        self.matcher.sgnSrcResult.connect(self.searchImageResult)
+        self.matcher.sgnSrcDone.connect(self.searchImageDone)
+        # Activate search button
+        self.searchBtn.setEnabled(True)
+        self.setStatusText("Initialization completed")
+
+    def searchImage(self):
+        self.setStatusText("Matching image...")
+        # Deactivate search button
+        self.searchBtn.setEnabled(False)
+        try:    # test file existence
+            if os.path.isfile(self.imgPathInp.text()):  # image test
+                img = Image.open(self.imgPathInp.text())
+                self.imgVector = self.extractor.extractImage(self.imgPathInp.text())
+                # Setup search
+                matchAlgorithm = ("euDist") if (self.matchAlgInp.currentIndex() == 0) else ("cosSim")
+                self.matcher.matchThreader(self.imgVector, matchAlgorithm, self.topImgInp.value(), self.fastAlgInp.isChecked())
+            else:
+                self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File not found!", type="Warning")
+                self.setStatusText("Matching failed")
+        except IOError:
+            self.dialogWindow("Open File", self.imgPathInp.text(), subtext="File is not an image!", type="Warning")
+            self.setStatusText("Matching failed")
+
+    def srcProgBar(self, totalImage):
+        self.pbSrc = QProgressDialog("Matching image...", "", 0, totalImage, self.centralwidget)
+        self.pbSrc.setWindowTitle("Progress..")
+        self.pbSrc.setCancelButton(None)
+        self.pbSrc.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        self.pbSrc.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+
+    def setSrcProgBarVal(self, progress):
+        self.pbSrc.setValue(progress)
+
+    def searchImageException(self, exception):
+        print("Error: " + str(exception))
+
+    def searchImageResult(self, res):
+        self.simImgPath, self.simImgDist = res
+
+    def searchImageDone(self):
+        self.setStatusText("Matching completed")
+        # Show Image Out and Create Image Index Property
+        self.topImgMax = self.topImgInp.value() - 1
+        self.topImgNow = 0
+        self.setImageOutput(self.simImgPath[0])
+        if self.topImgNow != self.topImgMax:
+            self.nextImgBtn.setEnabled(True)
+        self.setStatusText(self.simImgPath[0] + "\tDistance: " + str(self.simImgDist[0]))
+        # Activate search button
+        self.searchBtn.setEnabled(True)
+
+    # Extract Database
     def extractDatabase(self):
-        print(self.imgFilterBox.isChecked())
-        self.extractor.extractBatch("db", checkImg=self.imgFilterBox.isChecked())
+        self.setStatusText("Extracting vector from database...")
+        self.extBtn.setEnabled(False)
+        self.extractor.extractBatchThreader("db", thread=4, checkImg=self.imgFilterBox.isChecked())
+        self.setThreadStatusText(self.extractor.threadPool.activeThreadCount(),
+                                    self.extractor.threadPool.maxThreadCount())
+
+    def extProgBar(self, totalImage):
+        self.pbExt = QProgressDialog("Extracting images...", "Cancel", 0, totalImage, self.centralwidget)
+        self.pbExt.setWindowTitle("Progress..")
+        self.pbExt.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        self.pbExt.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+
+    def setExtProgBarVal(self):
+        print(self.pbExt.value() + 1)
+        self.pbExt.setValue(self.pbExt.value() + 1)
+
+    def extractDatabaseException(self, exception):
+        print("Error: " + str(exception))
+
+    def extractDatabaseStatus(self, activeThread, maxThread):
+        self.setThreadStatusText(activeThread, maxThread)
+
+    def extractDatabaseDone(self):
+        self.setStatusText("Extraction finished")
+        self.extBtn.setEnabled(True)
+        self.setThreadStatusText('N', 'A')
+
+    # Misc
+    def setStatusText(self, text):
+        self.statusBar.showMessage(text)
+
+    def setThreadStatusText(self, active, max):
+        self.rightStatus.setText("Thread: {0}/{1}".format(active, max))
 
     def dialogWindow(self, title, text, subtext="" , type="Information"):
         message = QMessageBox()
