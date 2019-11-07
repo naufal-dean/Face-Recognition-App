@@ -20,19 +20,22 @@ class Matcher(QObject):
     sgnSrcResult = pyqtSignal(object)
     sgnSrcDone = pyqtSignal()
 
-    def __init__(self, pckPath="imgData.pck", fastAlgorithm=False):
+    def __init__(self, pckPath="imgData.pck"):
         # QObject init
         super(Matcher, self).__init__()
         # Multithreader
         self.threadPool = QThreadPool()
         # Class property
         self.pckPath = os.path.join("pck", pckPath)
+
+    def precalculateVector(self, fastAlgorithm=False):
         with open(self.pckPath, "rb") as f:
             self.data = pickle.load(f)
         # Parse the dictionary
         self.name = []
         self.vector = []
         self.vectorLen = []
+
         vectorLenSample = len(next(iter(self.data.values())))
         zeroVector = np.zeros(vectorLenSample)
         if not(fastAlgorithm):
@@ -126,7 +129,6 @@ class Matcher(QObject):
             else:
                 raise Exception
         except Exception as e:
-            print(e)
             print("Invalid option")
         # Sort imgSimilarity, smaller value: more similar
         idxSort = np.argsort(imgSimilarity)

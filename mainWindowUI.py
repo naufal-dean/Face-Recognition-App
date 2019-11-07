@@ -14,12 +14,20 @@ class MainWindowUI(object):
     """Class untuk UI"""
 
     def __init__(self):
+        # Extractor
         self.extractor = Extractor()
         self.extractor.sgnExtTotalImg.connect(self.extProgBar)
         self.extractor.sgnExtProgress.connect(self.setExtProgBarVal)
         self.extractor.sgnExtException.connect(self.extractDatabaseException)
         self.extractor.sgnExtStatus.connect(self.extractDatabaseStatus)
         self.extractor.sgnExtDone.connect(self.extractDatabaseDone)
+        # Matcher
+        self.matcher = Matcher()
+        self.matcher.sgnSrcTotalImg.connect(self.srcProgBar)
+        self.matcher.sgnSrcProgress.connect(self.setSrcProgBarVal)
+        self.matcher.sgnSrcException.connect(self.searchImageException)
+        self.matcher.sgnSrcResult.connect(self.searchImageResult)
+        self.matcher.sgnSrcDone.connect(self.searchImageDone)
 
     # Setup UI
     def setupUi(self, MainWindow):
@@ -30,6 +38,16 @@ class MainWindowUI(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.setWindowTitle("Face Recognition App")
+        # Menu bar
+        self.menuBar = QtWidgets.QMenuBar(MainWindow)
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 869, 26))
+        self.fileMenu = self.menuBar.addMenu("File")
+        text = "A project from course Linear Algebra and Geometry IF2123 ITB 2019"
+        functor = lambda: self.dialogWindow("About", "Face Recognition App", subtext=text, type="Information")
+        self.aboutMenu = self.fileMenu.addAction("About", functor)
+        functor = QtCore.QCoreApplication.instance().quit
+        self.exitMenu = self.fileMenu.addAction("Exit", functor)
+        self.menuBar.setObjectName("menuBar")
         # Background and title
         self.backgroundLabel = QtWidgets.QLabel(self.centralwidget)
         self.backgroundLabel.setGeometry(QtCore.QRect(-10, -10, 881, 661))
@@ -39,7 +57,7 @@ class MainWindowUI(object):
         self.backgroundLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.backgroundLabel.setObjectName("backgroundLabel")
         self.titleLabel = QtWidgets.QLabel(self.centralwidget)
-        self.titleLabel.setGeometry(QtCore.QRect(320, 10, 231, 41))
+        self.titleLabel.setGeometry(QtCore.QRect(320, 18, 231, 41))
         font = QtGui.QFont()
         font.setFamily("Segoe UI Semibold")
         font.setPointSize(13)
@@ -110,7 +128,7 @@ class MainWindowUI(object):
         self.searchBtn.setObjectName("searchBtn")
         # Image In Group
         self.ImInGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.ImInGroup.setGeometry(QtCore.QRect(60, 50, 351, 381))
+        self.ImInGroup.setGeometry(QtCore.QRect(60, 56, 351, 381))
         self.ImInGroup.setObjectName("ImInGroup")
         self.picInLabel = QtWidgets.QLabel(self.ImInGroup)
         self.picInLabel.setGeometry(QtCore.QRect(10, 30, 331, 341))
@@ -119,7 +137,7 @@ class MainWindowUI(object):
         self.picInLabel.setObjectName("picInLabel")
         # Image Out Group
         self.ImOutGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.ImOutGroup.setGeometry(QtCore.QRect(460, 50, 351, 381))
+        self.ImOutGroup.setGeometry(QtCore.QRect(460, 56, 351, 381))
         self.ImOutGroup.setObjectName("ImOutGroup")
         self.picOutLabel = QtWidgets.QLabel(self.ImOutGroup)
         self.picOutLabel.setGeometry(QtCore.QRect(10, 30, 331, 341))
@@ -128,14 +146,29 @@ class MainWindowUI(object):
         self.picOutLabel.setObjectName("picOutLabel")
         # Extract Database Group
         self.extGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.extGroup.setGeometry(QtCore.QRect(650, 500, 191, 91))
+        self.extGroup.setGeometry(QtCore.QRect(650, 500, 191, 131))
         self.extGroup.setObjectName("extGroup")
         self.extBtn = QtWidgets.QPushButton(self.extGroup)
-        self.extBtn.setGeometry(QtCore.QRect(30, 50, 131, 28))
+        self.extBtn.setGeometry(QtCore.QRect(30, 90, 131, 28))
         self.extBtn.setObjectName("extBtn")
         self.imgFilterBox = QtWidgets.QCheckBox(self.extGroup)
-        self.imgFilterBox.setGeometry(QtCore.QRect(30, 30, 131, 20))
+        self.imgFilterBox.setGeometry(QtCore.QRect(20, 30, 131, 20))
         self.imgFilterBox.setObjectName("imgFilterBox")
+        self.formLayoutWidget_2 = QtWidgets.QWidget(self.extGroup)
+        self.formLayoutWidget_2.setGeometry(QtCore.QRect(20, 50, 160, 26))
+        self.formLayoutWidget_2.setObjectName("formLayoutWidget_2")
+        self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget_2)
+        self.formLayout.setContentsMargins(0, 0, 0, 0)
+        self.formLayout.setObjectName("formLayout")
+        self.threadLbl = QtWidgets.QLabel(self.formLayoutWidget_2)
+        self.threadLbl.setObjectName("threadLbl")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.threadLbl)
+        self.threadInp = QtWidgets.QSpinBox(self.formLayoutWidget_2)
+        self.threadInp.setMinimum(1)
+        threadPool = QThreadPool()
+        self.threadInp.setMaximum(threadPool.maxThreadCount() if (threadPool.maxThreadCount() > 1) else 1)
+        self.threadInp.setObjectName("threadInp")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.threadInp)
         # Image out button
         self.imOutBtnGroup = QtWidgets.QGroupBox(self.centralwidget)
         self.imOutBtnGroup.setGeometry(QtCore.QRect(650, 439, 191, 61))
@@ -156,13 +189,6 @@ class MainWindowUI(object):
         font.setPointSize(14)
         self.nextImgBtn.setFont(font)
         self.nextImgBtn.setObjectName("nextImgBtn")
-        # About and Exit button
-        self.aboutBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.aboutBtn.setGeometry(QtCore.QRect(650, 600, 93, 28))
-        self.aboutBtn.setObjectName("aboutBtn")
-        self.exitBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.exitBtn.setGeometry(QtCore.QRect(750, 600, 93, 28))
-        self.exitBtn.setObjectName("exitBtn")
         # Status bar
         self.statusBar = QtWidgets.QStatusBar(MainWindow)
         self.rightStatus = QLabel("Thread: N/A")
@@ -187,10 +213,6 @@ class MainWindowUI(object):
         self.nextImgBtn.clicked.connect(self.nextImage)
         # Extract Database
         self.extBtn.clicked.connect(self.extractDatabase)
-        # About and Exit
-        text = "A project from course Linear Algebra and Geometry IF2123 ITB 2019"
-        self.aboutBtn.clicked.connect(lambda: self.dialogWindow("About", "Face Recognition App", subtext=text, type="Information"))
-        self.exitBtn.clicked.connect(QtCore.QCoreApplication.instance().quit)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -209,11 +231,11 @@ class MainWindowUI(object):
         self.extGroup.setTitle(_translate("MainWindow", "Database"))
         self.imgFilterBox.setText(_translate("MainWindow", "Image Only Filter"))
         self.extBtn.setText(_translate("MainWindow", "Extract"))
+        self.imgFilterBox.setText(_translate("MainWindow", "Image Only Filter"))
+        self.threadLbl.setText(_translate("MainWindow", "Thread"))
         self.imOutBtnGroup.setTitle(_translate("MainWindow", "Image Out Button"))
         self.prevImgBtn.setText(_translate("MainWindow", "<"))
         self.nextImgBtn.setText(_translate("MainWindow", ">"))
-        self.exitBtn.setText(_translate("MainWindow", "Exit"))
-        self.aboutBtn.setText(_translate("MainWindow", "About"))
 
     # Slot functions
     # Image Input
@@ -267,15 +289,9 @@ class MainWindowUI(object):
         self.setStatusText("Precomputing vector norm from package...")
         # Create instance
         if self.fastAlgInp.isChecked():
-            self.matcher = Matcher(fastAlgorithm=True)
+            self.matcher.precalculateVector(fastAlgorithm=True)
         else:
-            self.matcher = Matcher()
-        # Connect signals
-        self.matcher.sgnSrcTotalImg.connect(self.srcProgBar)
-        self.matcher.sgnSrcProgress.connect(self.setSrcProgBarVal)
-        self.matcher.sgnSrcException.connect(self.searchImageException)
-        self.matcher.sgnSrcResult.connect(self.searchImageResult)
-        self.matcher.sgnSrcDone.connect(self.searchImageDone)
+            self.matcher.precalculateVector(fastAlgorithm=False)
         # Activate search button
         self.searchBtn.setEnabled(True)
         self.setStatusText("Initialization completed")
@@ -304,6 +320,7 @@ class MainWindowUI(object):
         self.pbSrc.setCancelButton(None)
         self.pbSrc.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.pbSrc.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+        self.pbSrc.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
 
     def setSrcProgBarVal(self, progress):
         self.pbSrc.setValue(progress)
@@ -321,6 +338,7 @@ class MainWindowUI(object):
         self.topImgNow = 0
         self.setImageOutput(self.simImgPath[0])
         if self.topImgNow != self.topImgMax:
+            self.prevImgBtn.setEnabled(False)
             self.nextImgBtn.setEnabled(True)
         self.setStatusText(self.simImgPath[0] + "\tDistance: " + str(self.simImgDist[0]))
         # Activate search button
@@ -330,7 +348,7 @@ class MainWindowUI(object):
     def extractDatabase(self):
         self.setStatusText("Extracting vector from database...")
         self.extBtn.setEnabled(False)
-        self.extractor.extractBatchThreader("db", thread=4, checkImg=self.imgFilterBox.isChecked())
+        self.extractor.extractBatchThreader("db", thread=self.threadInp.value(), checkImg=self.imgFilterBox.isChecked())
         self.setThreadStatusText(self.extractor.threadPool.activeThreadCount(),
                                     self.extractor.threadPool.maxThreadCount())
 
@@ -339,6 +357,7 @@ class MainWindowUI(object):
         self.pbExt.setWindowTitle("Progress..")
         self.pbExt.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.pbExt.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+        self.pbExt.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
 
     def setExtProgBarVal(self):
         print(self.pbExt.value() + 1)
