@@ -18,6 +18,7 @@ class MainWindowUI(object):
         self.extractor.sgnExtTotalImg.connect(self.extProgBar)
         self.extractor.sgnExtProgress.connect(self.setExtProgBarVal)
         self.extractor.sgnExtException.connect(self.extractDatabaseException)
+        self.extractor.sgnExtStatus.connect(self.extractDatabaseStatus)
         self.extractor.sgnExtDone.connect(self.extractDatabaseDone)
 
     # Setup UI
@@ -48,10 +49,10 @@ class MainWindowUI(object):
         self.titleLabel.setObjectName("titleLabel")
         # Search Group
         self.searchGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.searchGroup.setGeometry(QtCore.QRect(30, 440, 571, 191))
+        self.searchGroup.setGeometry(QtCore.QRect(30, 440, 591, 191))
         self.searchGroup.setObjectName("searchGroup")
         self.formLayoutWidget = QtWidgets.QWidget(self.searchGroup)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(20, 30, 531, 115))
+        self.formLayoutWidget.setGeometry(QtCore.QRect(20, 30, 551, 115))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.srcFormLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
         self.srcFormLayout.setContentsMargins(0, 0, 0, 0)
@@ -127,7 +128,7 @@ class MainWindowUI(object):
         self.picOutLabel.setObjectName("picOutLabel")
         # Extract Database Group
         self.extGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.extGroup.setGeometry(QtCore.QRect(620, 500, 191, 91))
+        self.extGroup.setGeometry(QtCore.QRect(650, 500, 191, 91))
         self.extGroup.setObjectName("extGroup")
         self.extBtn = QtWidgets.QPushButton(self.extGroup)
         self.extBtn.setGeometry(QtCore.QRect(30, 50, 131, 28))
@@ -137,7 +138,7 @@ class MainWindowUI(object):
         self.imgFilterBox.setObjectName("imgFilterBox")
         # Image out button
         self.imOutBtnGroup = QtWidgets.QGroupBox(self.centralwidget)
-        self.imOutBtnGroup.setGeometry(QtCore.QRect(620, 439, 191, 61))
+        self.imOutBtnGroup.setGeometry(QtCore.QRect(650, 439, 191, 61))
         self.imOutBtnGroup.setObjectName("imOutBtnGroup")
         self.prevImgBtn = QtWidgets.QPushButton(self.imOutBtnGroup)
         self.prevImgBtn.setEnabled(False)
@@ -157,13 +158,15 @@ class MainWindowUI(object):
         self.nextImgBtn.setObjectName("nextImgBtn")
         # About and Exit button
         self.aboutBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.aboutBtn.setGeometry(QtCore.QRect(620, 600, 93, 28))
+        self.aboutBtn.setGeometry(QtCore.QRect(650, 600, 93, 28))
         self.aboutBtn.setObjectName("aboutBtn")
         self.exitBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.exitBtn.setGeometry(QtCore.QRect(720, 600, 93, 28))
+        self.exitBtn.setGeometry(QtCore.QRect(750, 600, 93, 28))
         self.exitBtn.setObjectName("exitBtn")
         # Status bar
         self.statusBar = QtWidgets.QStatusBar(MainWindow)
+        self.rightStatus = QLabel("Thread: N/A")
+        self.statusBar.addPermanentWidget(self.rightStatus)
         self.statusBar.setObjectName("statusBar")
         self.statusBar.showMessage("Ready")
         MainWindow.setStatusBar(self.statusBar)
@@ -296,8 +299,9 @@ class MainWindowUI(object):
             self.setStatusText("Matching failed")
 
     def srcProgBar(self, totalImage):
-        self.pbSrc = QProgressDialog("Matching image...", "Cancel", 0, totalImage, self.centralwidget)
+        self.pbSrc = QProgressDialog("Matching image...", "", 0, totalImage, self.centralwidget)
         self.pbSrc.setWindowTitle("Progress..")
+        self.pbSrc.setCancelButton(None)
         self.pbSrc.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.pbSrc.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
@@ -326,7 +330,9 @@ class MainWindowUI(object):
     def extractDatabase(self):
         self.setStatusText("Extracting vector from database...")
         self.extBtn.setEnabled(False)
-        self.extractor.extractBatchThreader("db", self.imgFilterBox.isChecked())
+        self.extractor.extractBatchThreader("db", thread=4, checkImg=self.imgFilterBox.isChecked())
+        self.setThreadStatusText(self.extractor.threadPool.activeThreadCount(),
+                                    self.extractor.threadPool.maxThreadCount())
 
     def extProgBar(self, totalImage):
         self.pbExt = QProgressDialog("Extracting images...", "Cancel", 0, totalImage, self.centralwidget)
@@ -334,19 +340,27 @@ class MainWindowUI(object):
         self.pbExt.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.pbExt.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
-    def setExtProgBarVal(self, progress):
-        self.pbExt.setValue(progress)
+    def setExtProgBarVal(self):
+        print(self.pbExt.value() + 1)
+        self.pbExt.setValue(self.pbExt.value() + 1)
 
     def extractDatabaseException(self, exception):
         print("Error: " + str(exception))
 
+    def extractDatabaseStatus(self, activeThread, maxThread):
+        self.setThreadStatusText(activeThread, maxThread)
+
     def extractDatabaseDone(self):
-        self.setStatusText("Done")
+        self.setStatusText("Extraction finished")
         self.extBtn.setEnabled(True)
+        self.setThreadStatusText('N', 'A')
 
     # Misc
     def setStatusText(self, text):
         self.statusBar.showMessage(text)
+
+    def setThreadStatusText(self, active, max):
+        self.rightStatus.setText("Thread: {0}/{1}".format(active, max))
 
     def dialogWindow(self, title, text, subtext="" , type="Information"):
         message = QMessageBox()

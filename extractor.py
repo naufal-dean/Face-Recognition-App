@@ -15,9 +15,10 @@ from PyQt5.QtCore import *
 class Extractor(QObject):
     """Class untuk melakukan ekstraksi fitur gambar"""
     # Pyqt Signals
-    sgnExtProgress = pyqtSignal(int)
+    sgnExtProgress = pyqtSignal()
     sgnExtTotalImg = pyqtSignal(int)
     sgnExtException = pyqtSignal(object)
+    sgnExtStatus = pyqtSignal(int, int)
     sgnExtDone = pyqtSignal()
 
     def __init__(self, pckPath="imgData.pck"):
@@ -68,37 +69,54 @@ class Extractor(QObject):
             return None
         return dsc
 
-    def extractBatch(self, batchPath, checkImg):
-        images = self.listImageInDir(batchPath, checkImg)
-
-        # Init QProgressDialog
-        self.sgnExtTotalImg.emit(len(images))
-        counter = 0
-        pckContent = {}
+    def extractBatch(self, batchPath, checkImg, images):
+        self.pckContent = {}
         for image in images:
             name = image.split('/')[-1].lower()
             imgContent = self.extractImage(image)
-            pckContent[name] = self.extractImage(image)
+            self.pckContent[name] = imgContent
             # Update progress
-            counter += 1
-            self.sgnExtProgress.emit(counter)
+            self.sgnExtProgress.emit()
             print("Image {}".format(image))
 
-        with open(self.pckPath, "wb") as f:
-            pickle.dump(pckContent, f)
-
     # Multithreader
-    def extractBatchThreader(self, batchPath, checkImg=False):
+    def extractBatchThreader(self, batchPath, thread=1, checkImg=False):
+        # List images in db
+        images = self.listImageInDir(batchPath, checkImg)
+        # Init QProgressDialog
+        self.sgnExtTotalImg.emit(len(images))
+        # Save thread used and thread done
+        self.threadUsed = thread
+        self.threadDone = 0
+
         # Create worker instance
-        worker = Worker(self.extractBatch, batchPath, checkImg)
-        # Connect signals
-        worker.signals.exception.connect(self.extractBatchThreadException)
-        worker.signals.done.connect(self.extractBatchThreadDone)
-        # Run thread
-        self.threadPool.start(worker)
+        workers = []
+        stopIdx = 0 # initialize stopIdx, used if thread = 1
+        for i in range(thread - 1):
+            startIdx = i * (len(images) // thread)
+            stopIdx = (i + 1) * (len(images) // thread)
+            workers.append(Worker(self.extractBatch, batchPath, checkImg, images[startIdx:stopIdx]))
+        workers.append(Worker(self.extractBatch, batchPath, checkImg, images[stopIdx:]))
+
+        # Connect and run
+        for worker in workers:
+            # Connect signals
+            worker.signals.exception.connect(self.extractBatchThreadException)
+            worker.signals.done.connect(self.extractBatchThreadDone)
+            # Run thread
+            self.threadPool.start(worker)
 
     def extractBatchThreadException(self, exception):
         self.sgnExtException.emit(exception)
 
+    def extractBatchThreadStatus(self, activeThread, maxThread):
+        self.sgnExtStatus.emit(status)
+
     def extractBatchThreadDone(self):
-        self.sgnExtDone.emit()
+        self.threadDone += 1
+        extractBatchThreadStatus(self.QThreadPool.activeThreadCount(), self.QThreadPool.maxThreadCount())
+        if self.threadDone == self.threadUsed:
+            with open(self.pckPath, "wb") as f:
+                pickle.dump(self.pckContent, f)
+            # Send all done signal to mainWindowUI
+            self.sgnExtDone.emit()
