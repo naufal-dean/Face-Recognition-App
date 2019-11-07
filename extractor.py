@@ -110,13 +110,16 @@ class Extractor(QObject):
         self.sgnExtException.emit(exception)
 
     def extractBatchThreadStatus(self, activeThread, maxThread):
-        self.sgnExtStatus.emit(status)
+        self.sgnExtStatus.emit(activeThread, maxThread)
 
     def extractBatchThreadDone(self):
         self.threadDone += 1
-        extractBatchThreadStatus(self.QThreadPool.activeThreadCount(), self.QThreadPool.maxThreadCount())
+        self.extractBatchThreadStatus(self.threadPool.activeThreadCount(), self.threadPool.maxThreadCount())
         if self.threadDone == self.threadUsed:
             with open(self.pckPath, "wb") as f:
                 pickle.dump(self.pckContent, f)
+            # Reset variable
+            self.threadDone = 0
+            self.threadUsed = 0
             # Send all done signal to mainWindowUI
             self.sgnExtDone.emit()

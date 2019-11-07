@@ -318,6 +318,7 @@ class MainWindowUI(object):
         self.pbSrc = QProgressDialog("Matching image...", "", 0, totalImage, self.centralwidget)
         self.pbSrc.setWindowTitle("Progress..")
         self.pbSrc.setCancelButton(None)
+        self.pbSrc.setAttribute(Qt.WA_DeleteOnClose, True)
         self.pbSrc.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.pbSrc.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.pbSrc.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
@@ -337,25 +338,35 @@ class MainWindowUI(object):
         self.topImgMax = self.topImgInp.value() - 1
         self.topImgNow = 0
         self.setImageOutput(self.simImgPath[0])
-        if self.topImgNow != self.topImgMax:
-            self.prevImgBtn.setEnabled(False)
-            self.nextImgBtn.setEnabled(True)
         self.setStatusText(self.simImgPath[0] + "\tDistance: " + str(self.simImgDist[0]))
+        # Redefine next and previous image button
+        self.prevImgBtn.setEnabled(False)
+        if self.topImgNow != self.topImgMax:
+            self.nextImgBtn.setEnabled(True)
+        else:
+            self.nextImgBtn.setEnabled(False)
         # Activate search button
         self.searchBtn.setEnabled(True)
+        # Close QProgressDialog if not closed
+        self.pbSrc.close()
 
     # Extract Database
     def extractDatabase(self):
         self.setStatusText("Extracting vector from database...")
-        self.extBtn.setEnabled(False)
-        self.extractor.extractBatchThreader("db", thread=self.threadInp.value(), checkImg=self.imgFilterBox.isChecked())
-        self.setThreadStatusText(self.extractor.threadPool.activeThreadCount(),
-                                    self.extractor.threadPool.maxThreadCount())
+        try:
+            self.extractor.extractBatchThreader("db", thread=self.threadInp.value(), checkImg=self.imgFilterBox.isChecked())
+            self.setThreadStatusText(self.extractor.threadPool.activeThreadCount(),
+                                        self.extractor.threadPool.maxThreadCount())
+            self.extBtn.setEnabled(False)
+        except Exception as e:
+            self.setStatusText(str(e))
+            self.dialogWindow("Extract Database", str(e), type="Warning")
 
     def extProgBar(self, totalImage):
         self.pbExt = QProgressDialog("Extracting images...", "Cancel", 0, totalImage, self.centralwidget)
         self.pbExt.setWindowTitle("Progress..")
-        self.pbSrc.setCancelButton(None)
+        self.pbExt.setCancelButton(None)
+        self.pbExt.setAttribute(Qt.WA_DeleteOnClose, True)
         self.pbExt.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.pbExt.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.pbExt.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
@@ -372,6 +383,7 @@ class MainWindowUI(object):
 
     def extractDatabaseDone(self):
         self.setStatusText("Extraction finished")
+        self.pbExt.close()
         self.extBtn.setEnabled(True)
         self.setThreadStatusText('N', 'A')
 
