@@ -355,6 +355,7 @@ class MainWindowUI(object):
     def extProgBar(self, totalImage):
         self.pbExt = QProgressDialog("Extracting images...", "Cancel", 0, totalImage, self.centralwidget)
         self.pbExt.setWindowTitle("Progress..")
+        self.pbSrc.setCancelButton(None)
         self.pbExt.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.pbExt.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.pbExt.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
