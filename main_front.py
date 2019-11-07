@@ -12,8 +12,13 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+<<<<<<< HEAD
+        MainWindow.setObjectName("FaceRecognition")
+        MainWindow.resize(869, 638)
+=======
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(869, 641)
+>>>>>>> 3defaa92ca504727a717c5fad66875ccd3e40569
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.backgroundLabel = QtWidgets.QLabel(self.centralwidget)
